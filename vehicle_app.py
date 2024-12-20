@@ -154,7 +154,7 @@ def plot_routes(data, manager, routing, solution):
                          textcoords='offset points', fontsize=9,
                          bbox=dict(facecolor='white', edgecolor='gray', alpha=0.7))
 
-    plt.title('Optimized Vehicle Routes with Labeled Locations', pad=20)
+    plt.title('Optimized Vehicle Routes', pad=20)
     plt.xlabel('X Coordinate')
     plt.ylabel('Y Coordinate')
     plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
