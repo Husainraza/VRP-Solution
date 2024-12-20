@@ -70,7 +70,7 @@ def plot_routes(data, manager, routing, solution):
         coordinates.append(data['locations'][0])  # return to depot
         xs, ys = zip(*coordinates)
         plt.plot(xs, ys, marker='o', color=colors[vehicle_id], label=f'Vehicle {vehicle_id}')
-    plt.title('Vehicle Routing Problem Solution')
+    plt.title('Optimized Vehicle Routes')
     plt.xlabel('X Coordinate')
     plt.ylabel('Y Coordinate')
     plt.legend()
@@ -171,7 +171,19 @@ def main():
 
         # Print solution on console.
         if solution:
+            st.write("### Solution")
+            st.write("""
+                        The optimised routes taken by the different vehicles and 
+                        the distance of each routes are as follows:
+                        """)
             print_solution(data, manager, routing, solution)
+            st.write("### Graphical representation")
+            st.write("""
+            The graph represents optimized vehicle routes for different number of vehicles.
+            The X and Y axes denote coordinates, suggesting a geographical area or a grid.
+            Each colored line corresponds to the path taken by a vehicle, showing their routes from start to finish.
+            The optimization implies that these routes are calculated to minimize distance for logistical efficiency.
+            """)
             plot_routes(data, manager, routing, solution)
         else:
             st.write("No solution found!")
