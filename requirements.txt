@@ -2,3 +2,4 @@ numpy
 ortools
 matplotlib
 seaborn
+streamlit
