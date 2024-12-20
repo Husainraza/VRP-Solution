@@ -118,10 +118,10 @@ def main():
     plot_locations(data)
 
     # User selects the distance metric
-    distance_type = st.selectbox('Select Distance Metric', ['Euclidean', 'Manhattan'])
+    distance_type = st.selectbox('Distance Metric', ['Euclidean', 'Manhattan'])
 
     # User selects the number of vehicles
-    num_vehicles = st.slider('Select Number of Vehicles', min_value=1, max_value=5, value=4)
+    num_vehicles = st.slider('Number of Vehicles', min_value=1, max_value=5, value=4)
 
     # Add a button to start the algorithm
     if st.button("Run Algorithm"):
