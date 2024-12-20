@@ -78,6 +78,29 @@ def plot_routes(data, manager, routing, solution):
     st.pyplot(plt)
 
 
+def plot_locations(data):
+    st.write("### Customer Delivery Locations ")
+    st.write("""
+        The graph below represents the spatial distribution of customer delivery locations and the central depot. 
+        The blue points mark the various delivery locations, indicating where customers are situated across the area. 
+        Meanwhile, the red point at the bottom left corner signifies the depot, the main hub for dispatching deliveries. 
+        The arrangement of blue points around the red depot provides insights into delivery patterns, 
+        potential route optimizations, and areas with concentrated customer demand, which can be crucial 
+        for improving logistical efficiency.
+        """)
+    plt.figure(figsize=(8, 6))
+    xs, ys = zip(*data['locations'])
+    plt.scatter(xs, ys, c='blue', label='Locations')
+    plt.scatter(xs[0], ys[0], c='red', label='Depot', edgecolors='black', s=100)
+    plt.title('Locations of Depot and Delivery Points')
+    plt.xlabel('X Coordinate')
+    plt.ylabel('Y Coordinate')
+    plt.legend()
+    plt.grid(True)
+    st.pyplot(plt)
+
+
+
 def main():
     """Entry point of the program."""
     st.title('Vehicle Routing Problem')
@@ -91,13 +114,19 @@ def main():
     This solution leverages state-of-the-art techniques to address real-world routing challenges.
     """)
 
+    # Instantiate the data problem.
+    data = create_data_model('euclidean', 1)  # Default values to show the graph
+
+    # Plot the locations
+    plot_locations(data)
+
     # User selects the distance metric
     distance_type = st.selectbox('Select Distance Metric', ['euclidean', 'manhattan'])
 
     # User selects the number of vehicles
     num_vehicles = st.slider('Select Number of Vehicles', min_value=1, max_value=5, value=4)
 
-    # Instantiate the data problem.
+    # Update data with user inputs
     data = create_data_model(distance_type, num_vehicles)
 
     # Create the routing index manager.
@@ -152,3 +181,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
