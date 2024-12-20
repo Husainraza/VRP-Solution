@@ -175,7 +175,7 @@ def main():
     """)
 
     # Instantiate the data problem.
-    data = create_data_model('Manhattan', 4)  # Default values to show the graph
+    data = create_data_model('Manhattan', 3)  # Default values to show the graph
 
     # Plot the locations
     plot_locations(data)
@@ -184,7 +184,7 @@ def main():
     distance_type = st.selectbox('Distance Metric', ['Euclidean', 'Manhattan'])
 
     # User selects the number of vehicles
-    num_vehicles = st.slider('Number of Vehicles', min_value=1, max_value=5, value=4)
+    num_vehicles = st.slider('Number of Vehicles', min_value=1, max_value=5, value=3)
 
     # Add a button to start the algorithm
     if st.button("Run Algorithm"):
