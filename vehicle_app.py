@@ -14,8 +14,8 @@ def create_data_model(distance_type, num_vehicles):
         (35, 10), (40, 5)
     ]
 
-    def calculate_distance(p1, p2, type='euclidean'):
-        if type == 'manhattan':
+    def calculate_distance(p1, p2, type='Euclidean'):
+        if type == 'Manhattan':
             return abs(p1[0] - p2[0]) + abs(p1[1] - p2[1])
         else:  # Euclidean
             return np.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)
@@ -27,7 +27,7 @@ def create_data_model(distance_type, num_vehicles):
             if i == j:
                 row.append(0)
             else:
-                row.append(int(calculate_distance(locations[i], locations[j], distance_type)))
+                row.append(int(calculate_distance(locations[i], locations[j], type)))
         distance_matrix.append(row)
 
     data = {"distance_matrix": distance_matrix, "num_vehicles": num_vehicles, "depot": 0, "locations": locations}
@@ -81,13 +81,13 @@ def plot_routes(data, manager, routing, solution):
 def plot_locations(data):
     st.write("### Customer Delivery Locations ")
     st.write("""
-        The graph below represents the spatial distribution of customer delivery locations and the central depot. 
-        The blue points mark the various delivery locations, indicating where customers are situated across the area. 
-        Meanwhile, the red point at the bottom left corner signifies the depot, the main hub for dispatching deliveries. 
-        The arrangement of blue points around the red depot provides insights into delivery patterns, 
-        potential route optimizations, and areas with concentrated customer demand, which can be crucial 
-        for improving logistical efficiency.
-        """)
+            The graph below represents the spatial distribution of customer delivery locations and the central depot. 
+            The blue points mark the various delivery locations, indicating where customers are situated across the area. 
+            Meanwhile, the red point at the bottom left corner signifies the depot, the main hub for dispatching deliveries. 
+            The arrangement of blue points around the red depot provides insights into delivery patterns, 
+            potential route optimizations, and areas with concentrated customer demand, which can be crucial 
+            for improving logistical efficiency.
+            """)
     plt.figure(figsize=(8, 6))
     xs, ys = zip(*data['locations'])
     plt.scatter(xs, ys, c='blue', label='Locations')
@@ -100,7 +100,6 @@ def plot_locations(data):
     st.pyplot(plt)
 
 
-
 def main():
     """Entry point of the program."""
     st.title('Vehicle Routing Problem')
@@ -110,75 +109,73 @@ def main():
     Our approach efficiently determines optimal routes for a fleet of vehicles to deliver 
     goods or services to various locations, minimizing transportation costs while respecting 
     constraints like vehicle capacities and delivery time windows.
-    Ideal for applications in logistics, transportation, and supply chain management. 
-    This solution leverages state-of-the-art techniques to address real-world routing challenges.
     """)
 
     # Instantiate the data problem.
-    data = create_data_model('euclidean', 1)  # Default values to show the graph
+    data = create_data_model('Manhattan', 4)  # Default values to show the graph
 
     # Plot the locations
     plot_locations(data)
 
     # User selects the distance metric
-    distance_type = st.selectbox('Select Distance Metric', ['euclidean', 'manhattan'])
+    distance_type = st.selectbox('Select Distance Metric', ['Euclidean', 'Manhattan'])
 
     # User selects the number of vehicles
     num_vehicles = st.slider('Select Number of Vehicles', min_value=1, max_value=5, value=4)
 
-    # Update data with user inputs
-    data = create_data_model(distance_type, num_vehicles)
+    # Add a button to start the algorithm
+    if st.button("Run Algorithm"):
+        # Update data with user inputs
+        data = create_data_model(distance_type, num_vehicles)
 
-    # Create the routing index manager.
-    manager = pywrapcp.RoutingIndexManager(
-        len(data["distance_matrix"]), data["num_vehicles"], data["depot"]
-    )
+        # Create the routing index manager.
+        manager = pywrapcp.RoutingIndexManager(
+            len(data["distance_matrix"]), data["num_vehicles"], data["depot"]
+        )
 
-    # Create Routing Model.
-    routing = pywrapcp.RoutingModel(manager)
+        # Create Routing Model.
+        routing = pywrapcp.RoutingModel(manager)
 
-    # Create and register a transit callback.
-    def distance_callback(from_index, to_index):
-        """Returns the distance between the two nodes."""
-        # Convert from routing variable Index to distance matrix NodeIndex.
-        from_node = manager.IndexToNode(from_index)
-        to_node = manager.IndexToNode(to_index)
-        return data["distance_matrix"][from_node][to_node]
+        # Create and register a transit callback.
+        def distance_callback(from_index, to_index):
+            """Returns the distance between the two nodes."""
+            from_node = manager.IndexToNode(from_index)
+            to_node = manager.IndexToNode(to_index)
+            return data["distance_matrix"][from_node][to_node]
 
-    transit_callback_index = routing.RegisterTransitCallback(distance_callback)
+        transit_callback_index = routing.RegisterTransitCallback(distance_callback)
 
-    # Define cost of each arc.
-    routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
+        # Define cost of each arc.
+        routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
 
-    # Add Distance constraint.
-    dimension_name = "Distance"
-    routing.AddDimension(
-        transit_callback_index,
-        0,  # no slack
-        3000,  # vehicle maximum travel distance
-        True,  # start cumul to zero
-        dimension_name,
-    )
-    distance_dimension = routing.GetDimensionOrDie(dimension_name)
-    distance_dimension.SetGlobalSpanCostCoefficient(100)
+        # Add Distance constraint.
+        dimension_name = "Distance"
+        routing.AddDimension(
+            transit_callback_index,
+            0,  # no slack
+            3000,  # vehicle maximum travel distance
+            True,  # start cumul to zero
+            dimension_name,
+        )
+        distance_dimension = routing.GetDimensionOrDie(dimension_name)
+        distance_dimension.SetGlobalSpanCostCoefficient(100)
 
-    # Setting first solution heuristic.
-    search_parameters = pywrapcp.DefaultRoutingSearchParameters()
-    search_parameters.first_solution_strategy = (
-        routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
-    )
+        # Setting first solution heuristic.
+        search_parameters = pywrapcp.DefaultRoutingSearchParameters()
+        search_parameters.first_solution_strategy = (
+            routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC
+        )
 
-    # Solve the problem.
-    solution = routing.SolveWithParameters(search_parameters)
+        # Solve the problem.
+        solution = routing.SolveWithParameters(search_parameters)
 
-    # Print solution on console.
-    if solution:
-        print_solution(data, manager, routing, solution)
-        plot_routes(data, manager, routing, solution)
-    else:
-        st.write("No solution found !")
+        # Print solution on console.
+        if solution:
+            print_solution(data, manager, routing, solution)
+            plot_routes(data, manager, routing, solution)
+        else:
+            st.write("No solution found!")
 
 
 if __name__ == "__main__":
     main()
-    
