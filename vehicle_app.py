@@ -35,8 +35,50 @@ def create_data_model(distance_type, num_vehicles):
     return data
 
 
+def plot_locations(data):
+    st.write("### Customer Delivery Locations")
+    st.write("""
+            The graph below shows the distribution of delivery locations and the depot.
+            Each customer location is numbered, and the depot is clearly marked in red.
+            The arrangement of blue points around the red depot provides insights into delivery patterns, 
+            potential route optimizations, and areas with concentrated customer demand, which can be crucial 
+            for improving logistical efficiency.
+            """)
+
+    plt.figure(figsize=(10, 8))
+    xs, ys = zip(*data['locations'])
+
+    # Plot customer locations with numbers
+    plt.scatter(xs[1:], ys[1:], c='blue', label='Customer Locations', s=100)
+
+    # Plot depot with distinct marking
+    plt.scatter(xs[0], ys[0], c='red', label='Depot', marker='*', s=200, edgecolors='black')
+
+    # Add location numbers as annotations
+    for i, (x, y) in enumerate(data['locations']):
+        if i == 0:
+            plt.annotate(f'Depot', (x, y), xytext=(10, 10),
+                         textcoords='offset points', fontsize=10,
+                         bbox=dict(facecolor='white', edgecolor='red', alpha=0.7))
+        else:
+            plt.annotate(f'Customer {i}', (x, y), xytext=(10, 10),
+                         textcoords='offset points', fontsize=9,
+                         bbox=dict(facecolor='white', edgecolor='blue', alpha=0.7))
+
+    plt.title('Depot and Customer Delivery Locations', pad=20)
+    plt.xlabel('X Coordinate')
+    plt.ylabel('Y Coordinate')
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.grid(True, linestyle='--', alpha=0.7)
+    st.pyplot(plt)
+
+
 def print_solution(data, manager, routing, solution):
-    """Prints solution on console."""
+    st.write("### Solution")
+    st.write("""
+    The optimised routes taken by the different vehicles and 
+    the distance of each routes are as follows:""")
+    # Print Solution to the console
     st.write(f"Objective: {solution.ObjectiveValue()}")
     max_route_distance = 0
     for vehicle_id in range(data["num_vehicles"]):
@@ -58,46 +100,66 @@ def print_solution(data, manager, routing, solution):
 
 
 def plot_routes(data, manager, routing, solution):
-    """Plots the routes for each vehicle."""
+    """Plots the routes for each vehicle with enhanced labeling."""
+    st.write("### Optimized Vehicle Routes")
+    st.write("""
+            The graph below shows the optimized routes for each vehicle.
+            The depot (start/end point) is marked with a star, and each customer
+            location is numbered. Different colors represent different vehicle routes.
+            The optimization implies that these routes are calculated to minimize distance 
+            for logistical efficiency.
+            """)
+
     plt.figure(figsize=(12, 8))
-    colors = sns.color_palette('hsv', n_colors=data['num_vehicles'])
+    colors = sns.color_palette('husl', n_colors=data['num_vehicles'])
+
+    # Plot all locations first
+    xs, ys = zip(*data['locations'])
+    plt.scatter(xs[1:], ys[1:], c='lightgray', s=100, zorder=1)
+    plt.scatter(xs[0], ys[0], c='red', marker='*', s=200, edgecolors='black', zorder=2, label='Depot')
+
+    # Plot routes for each vehicle
     for vehicle_id in range(data['num_vehicles']):
         index = routing.Start(vehicle_id)
         coordinates = []
+        route_points = []
         while not routing.IsEnd(index):
             node_index = manager.IndexToNode(index)
             coordinates.append(data['locations'][node_index])
+            route_points.append(node_index)
             index = solution.Value(routing.NextVar(index))
         coordinates.append(data['locations'][0])  # return to depot
+
+        # Plot route
         xs, ys = zip(*coordinates)
-        plt.plot(xs, ys, marker='o', color=colors[vehicle_id], label=f'Vehicle {vehicle_id}')
-    plt.title('Optimized Vehicle Routes')
+        plt.plot(xs, ys, '-', color=colors[vehicle_id],
+                 label=f'Vehicle {vehicle_id}', linewidth=2, zorder=3)
+
+        # Add direction arrows
+        for i in range(len(coordinates) - 1):
+            mid_x = (coordinates[i][0] + coordinates[i + 1][0]) / 2
+            mid_y = (coordinates[i][1] + coordinates[i + 1][1]) / 2
+            plt.annotate('', xy=(coordinates[i + 1][0], coordinates[i + 1][1]),
+                         xytext=(mid_x, mid_y),
+                         arrowprops=dict(arrowstyle='->', color=colors[vehicle_id]))
+
+    # Add location labels
+    for i, (x, y) in enumerate(data['locations']):
+        if i == 0:
+            plt.annotate(f'Depot', (x, y), xytext=(10, 10),
+                         textcoords='offset points', fontsize=10,
+                         bbox=dict(facecolor='white', edgecolor='red', alpha=0.7))
+        else:
+            plt.annotate(f'Customer {i}', (x, y), xytext=(10, 10),
+                         textcoords='offset points', fontsize=9,
+                         bbox=dict(facecolor='white', edgecolor='gray', alpha=0.7))
+
+    plt.title('Optimized Vehicle Routes with Labeled Locations', pad=20)
     plt.xlabel('X Coordinate')
     plt.ylabel('Y Coordinate')
-    plt.legend()
-    plt.grid(True)
-    st.pyplot(plt)
-
-
-def plot_locations(data):
-    st.write("### Customer Delivery Locations ")
-    st.write("""
-            The graph below represents the spatial distribution of customer delivery locations and the central depot. 
-            The blue points mark the various delivery locations, indicating where customers are situated across the area. 
-            Meanwhile, the red point at the bottom left corner signifies the depot, the main hub for dispatching deliveries. 
-            The arrangement of blue points around the red depot provides insights into delivery patterns, 
-            potential route optimizations, and areas with concentrated customer demand, which can be crucial 
-            for improving logistical efficiency.
-            """)
-    plt.figure(figsize=(8, 6))
-    xs, ys = zip(*data['locations'])
-    plt.scatter(xs, ys, c='blue', label='Locations')
-    plt.scatter(xs[0], ys[0], c='red', label='Depot', edgecolors='black', s=100)
-    plt.title('Locations of Depot and Delivery Points')
-    plt.xlabel('X Coordinate')
-    plt.ylabel('Y Coordinate')
-    plt.legend()
-    plt.grid(True)
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.grid(True, linestyle='--', alpha=0.7)
+    plt.tight_layout()
     st.pyplot(plt)
 
 
@@ -172,19 +234,7 @@ def main():
 
         # Print solution on console.
         if solution:
-            st.write("### Solution")
-            st.write("""
-                        The optimised routes taken by the different vehicles and 
-                        the distance of each routes are as follows:
-                        """)
             print_solution(data, manager, routing, solution)
-            st.write("### Graphical representation")
-            st.write("""
-            The graph represents optimized vehicle routes for different number of vehicles.
-            The X and Y axes denote coordinates, suggesting a geographical area or a grid.
-            Each colored line corresponds to the path taken by a vehicle, showing their routes from start to finish.
-            The optimization implies that these routes are calculated to minimize distance for logistical efficiency.
-            """)
             plot_routes(data, manager, routing, solution)
         else:
             st.write("No solution found!")
